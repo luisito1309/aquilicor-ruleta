@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RULETA AQUI LICOR — Sorteo Mensual</title>
+  <meta name="description" content="Participa en el sorteo mensual de RULETA AQUI LICOR. Cada compra es un ticket más para ganar el Premio Sorpresa del Mes." />
+  <meta property="og:title" content="RULETA AQUI LICOR — Sorteo Mensual" />
+  <meta property="og:description" content="¡Compra, escanea tu QR y gana!" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/main.css" />
+  <link rel="stylesheet" href="css/index.css" />
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="nav" id="main-nav">
+    <div class="nav__inner">
+      <a href="index.html" class="nav__logo">
+        🍾 RULETA AQUI LICOR
+      </a>
+      <div class="nav__links">
+        <a href="ganadores.html" class="nav__link">🏆 Ganadores</a>
+        <a href="admin.html" class="nav__link hide-mobile">⚙️ Admin</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero" id="hero">
+    <div class="hero__particles" id="hero-particles"></div>
+    <div class="hero__glow hero__glow--left"></div>
+    <div class="hero__glow hero__glow--right"></div>
+
+    <div class="hero__content container">
+      <div class="hero__badge">
+        <span class="dot dot--success"></span>
+        Sorteo Activo — Julio 2026
+      </div>
+
+      <h1 class="hero__title display-1">
+        RULETA<br />
+        <span class="text-gold">AQUI LICOR</span>
+      </h1>
+
+      <p class="hero__subtitle">
+        Cada compra en nuestra licorería es una oportunidad más de ganar.<br />
+        Escanea tu QR, regístrate y ¡que gire la ruleta!
+      </p>
+
+      <div class="hero__ctas">
+        <a href="ganadores.html" class="btn btn--secondary btn--large" id="btn-ver-ganadores">
+          🏆 Ver Ganadores
+        </a>
+      </div>
+
+      <!-- Spinning roulette visual -->
+      <div class="hero__wheel-wrapper">
+        <div class="hero__wheel" id="hero-wheel">
+          <div class="hero__wheel-inner">
+            <span class="hero__wheel-icon">🍾</span>
+          </div>
+          <div class="hero__wheel-arrow"></div>
+        </div>
+        <p class="hero__wheel-label">Premio Sorpresa del Mes</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section class="section how-it-works" id="como-funciona">
+    <div class="container">
+      <h2 class="section-title reveal">¿Cómo Funciona?</h2>
+      <span class="gold-line reveal"></span>
+      <p class="section-subtitle reveal">Participar es muy fácil. Solo necesitas realizar una compra.</p>
+
+      <div class="steps-grid">
+
+        <div class="step-card reveal">
+          <div class="step-card__number">01</div>
+          <div class="step-card__icon">🛒</div>
+          <h3 class="step-card__title">Realiza tu Compra</h3>
+          <p class="step-card__desc">
+            Compra cualquier producto en nuestra licorería. Cada compra te da derecho a un ticket del sorteo.
+          </p>
+        </div>
+
+        <div class="step-connector reveal">
+          <div class="connector-line"></div>
+          <span class="connector-arrow">→</span>
+        </div>
+
+        <div class="step-card reveal">
+          <div class="step-card__number">02</div>
+          <div class="step-card__icon">📱</div>
+          <h3 class="step-card__title">Escanea el QR</h3>
+          <p class="step-card__desc">
+            Solicita tu código QR único en caja y escanéalo con tu celular. Cada QR es de un solo uso.
+          </p>
+        </div>
+
+        <div class="step-connector reveal">
+          <div class="connector-line"></div>
+          <span class="connector-arrow">→</span>
+        </div>
+
+        <div class="step-card reveal">
+          <div class="step-card__number">03</div>
+          <div class="step-card__icon">🎰</div>
+          <h3 class="step-card__title">¡Participa y Gana!</h3>
+          <p class="step-card__desc">
+            Completa tu registro y acumula tickets. Al final del mes, giramos la ruleta y anunciamos al ganador.
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Features / Rules -->
+  <section class="section features" id="reglas">
+    <div class="container">
+      <h2 class="section-title reveal">Reglas del Sorteo</h2>
+      <span class="gold-line reveal"></span>
+
+      <div class="features-grid">
+        <div class="feature-card reveal card">
+          <div class="feature-card__icon">🎟️</div>
+          <h3>Más Compras = Más Chances</h3>
+          <p>Puedes registrarte múltiples veces en el mes. Cada compra con un QR distinto es un ticket adicional para el sorteo.</p>
+        </div>
+
+        <div class="feature-card reveal card">
+          <div class="feature-card__icon">🔐</div>
+          <h3>QR de Un Solo Uso</h3>
+          <p>Cada código QR solo puede ser usado una vez. Una vez escaneado y registrado, el código queda invalidado automáticamente.</p>
+        </div>
+
+        <div class="feature-card reveal card">
+          <div class="feature-card__icon">🔞</div>
+          <h3>Solo Mayores de Edad</h3>
+          <p>Para participar debes confirmar que eres mayor de 18 años. El sorteo es exclusivamente para clientes adultos.</p>
+        </div>
+
+        <div class="feature-card reveal card">
+          <div class="feature-card__icon">📅</div>
+          <h3>Sorteo Mensual</h3>
+          <p>Al final de cada mes realizamos el sorteo en vivo con nuestra ruleta interactiva. El ganador se anuncia públicamente.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Banner -->
+  <section class="section cta-banner">
+    <div class="container">
+      <div class="cta-card reveal">
+        <div class="cta-card__glow"></div>
+        <div class="cta-card__content">
+          <h2 class="cta-card__title">¿Ya tienes tu QR?</h2>
+          <p class="cta-card__desc">Pide tu código QR en la caja del local y regístrate ahora para el sorteo de este mes.</p>
+          <div class="cta-card__badge">
+            <span class="dot dot--success"></span>
+            Registros abiertos
+          </div>
+        </div>
+        <div class="cta-card__icon">🍾🎰🥂</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__inner">
+        <div class="footer__brand">
+          <span class="footer__logo">🍾 RULETA AQUI LICOR</span>
+          <p class="footer__tagline">Donde cada compra es una oportunidad</p>
+        </div>
+        <div class="footer__links">
+          <a href="ganadores.html" class="footer__link">Ganadores</a>
+          <a href="admin.html" class="footer__link">Admin</a>
+        </div>
+      </div>
+      <div class="footer__bottom">
+        <p>© <span id="footer-year"></span> RULETA AQUI LICOR. Venta y consumo responsable de bebidas alcohólicas — Solo mayores de edad.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/index.js"></script>
+</body>
+</html>

@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Panel de Administración — RULETA AQUI LICOR</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- QRCode.js library via CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <!-- Supabase JS SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/main.css" />
+  <link rel="stylesheet" href="css/admin.css" />
+</head>
+<body>
+
+  <!-- Access Protection Modal (Login Gate) -->
+  <div id="admin-auth-modal" class="modal-overlay is-open">
+    <div class="modal auth-modal text-center">
+      <div class="auth-icon">🔐</div>
+      <h2 class="mb-2">Acceso Administrador</h2>
+      <p class="text-secondary mb-6">Ingresa la clave de caja para acceder al panel.</p>
+      
+      <form id="admin-auth-form" class="flex flex-col gap-4">
+        <div class="form-group">
+          <input 
+            type="password" 
+            id="admin-password" 
+            class="form-input text-center" 
+            placeholder="Contraseña" 
+            required 
+            autofocus
+          />
+          <span id="auth-error" class="form-error text-center mt-2">Contraseña incorrecta. Inténtalo de nuevo.</span>
+        </div>
+        <button type="submit" class="btn btn--primary btn--large w-full">Ingresar al Panel</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Admin Main Interface -->
+  <div id="admin-dashboard" class="admin-layout hide">
+    
+    <!-- Top Navigation -->
+    <header class="admin-header">
+      <div class="container admin-header__inner">
+        <a href="index.html" class="admin-logo">🍾 RULETA AQUI LICOR <span class="admin-badge-label">PANEL CAJA</span></a>
+        <div class="admin-user-menu">
+          <span class="text-secondary text-sm">Administrador</span>
+          <button id="btn-logout" class="btn btn--ghost btn--small">Cerrar Sesión</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="container admin-main">
+
+      <!-- Section 1: QR Generator Panel (Caja) -->
+      <section class="admin-section">
+        <div class="card card--glass qr-panel">
+          <div class="qr-panel__header">
+            <div>
+              <h2 class="qr-panel__title">📱 Generador de QR (Pantalla de Caja)</h2>
+              <p class="text-secondary">El QR se regenera automáticamente cuando el cliente completa su registro.</p>
+            </div>
+            <div id="qr-status-badge" class="badge badge--active">
+              <span class="dot dot--success"></span> <span id="qr-status-text">QR ACTIVO</span>
+            </div>
+          </div>
+
+          <div class="qr-display-container">
+            <div class="qr-card">
+              <div id="qrcode" class="qr-canvas"></div>
+              <div id="qr-loading" class="spinner margin-auto hide"></div>
+              <p id="qr-url-display" class="qr-url-text">https://...</p>
+            </div>
+
+            <div class="qr-actions">
+              <button id="btn-generate-qr" class="btn btn--primary btn--large">
+                ⚡ Generar Nuevo QR Manualmente
+              </button>
+              <p class="text-muted text-sm text-center mt-2">
+                🔒 Cada QR es único y caduca inmediatamente al ser utilizado por un cliente.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 2: Sorteo Config & Stats -->
+      <section class="admin-section">
+        <div class="grid grid-2-col gap-6">
+
+          <!-- Config Form Card -->
+          <div class="card card--glass">
+            <h3 class="card-title mb-4">⚙️ Configuración del Sorteo Mensual</h3>
+            <form id="sorteo-config-form" class="flex flex-col gap-4">
+              <div class="grid grid-2-col gap-4">
+                <div class="form-group">
+                  <label class="form-label" for="fecha-inicio">Fecha de Inicio</label>
+                  <input type="date" id="fecha-inicio" class="form-input" required />
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="fecha-fin">Fecha de Fin</label>
+                  <input type="date" id="fecha-fin" class="form-input" required />
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="premio-nombre">Nombre del Premio</label>
+                <input type="text" id="premio-nombre" class="form-input" placeholder="Premio Sorpresa del Mes" value="Premio Sorpresa del Mes" />
+              </div>
+              <button type="submit" class="btn btn--secondary w-full">Guardar Configuración</button>
+            </form>
+          </div>
+
+          <!-- Counter & Info Card -->
+          <div class="card card--glass flex flex-col justify-between">
+            <div>
+              <h3 class="card-title mb-4">🎟️ Participaciones Acumuladas</h3>
+              <p class="text-secondary text-sm mb-4">Total de tickets registrados por compras en el período activo:</p>
+            </div>
+            
+            <div class="ticket-counter-box text-center">
+              <span id="ticket-count" class="ticket-count-number">0</span>
+              <span class="ticket-count-label">Tickets Válidos</span>
+            </div>
+
+            <div class="flex gap-2 align-center justify-between mt-4">
+              <span class="text-muted text-xs">Actualizado en tiempo real</span>
+              <button id="btn-refresh-participants" class="btn btn--ghost btn--small">🔄 Cargar Participantes</button>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Section 3: Interactive Roulette Wheel -->
+      <section class="admin-section">
+        <div class="card card--glass roulette-panel text-center">
+          <h2 class="roulette-title">🎰 La Ruleta del Sorteo</h2>
+          <p class="text-secondary mb-6">Todos los tickets registrados participarán proporcionalmente en la ruleta.</p>
+
+          <div class="roulette-wrapper">
+            <div class="roulette-pointer"></div>
+            <canvas id="roulette-canvas" width="460" height="460"></canvas>
+          </div>
+
+          <div class="roulette-controls mt-6">
+            <button id="btn-spin-wheel" class="btn btn--primary btn--large btn-spin">
+              🚀 ¡EMPEZAR SORTEO!
+            </button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Winner Modal -->
+  <div id="winner-modal" class="modal-overlay">
+    <div class="modal winner-modal text-center">
+      <div class="winner-trophy">🏆</div>
+      <h2 class="text-gold mb-1">¡TENEMOS UN GANADOR!</h2>
+      <p class="text-secondary mb-6">Seleccionado aleatoriamente por la ruleta</p>
+
+      <div class="winner-info-card mb-6">
+        <h3 id="winner-name" class="winner-name-text">Nombre del Ganador</h3>
+        <p class="winner-detail"><strong>CI:</strong> <span id="winner-ci">1234567</span></p>
+        <p class="winner-detail" id="winner-phone-container"><strong>Teléfono:</strong> <span id="winner-phone">76543210</span></p>
+      </div>
+
+      <div class="flex gap-4 justify-center">
+        <button id="btn-close-winner-modal" class="btn btn--ghost">Cancelar</button>
+        <button id="btn-publish-winner" class="btn btn--primary">
+          💾 Guardar y Publicar Ganador
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/config.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ganadores — RULETA AQUI LICOR</title>
+  <meta name="description" content="Conoce el historial de afortunados ganadores de los sorteos mensuales de RULETA AQUI LICOR." />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Supabase JS SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/main.css" />
+  <link rel="stylesheet" href="css/ganadores.css" />
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="nav">
+    <div class="nav__inner">
+      <a href="index.html" class="nav__logo">
+        🍾 RULETA AQUI LICOR
+      </a>
+      <div class="nav__links">
+        <a href="index.html" class="nav__link">Inicio</a>
+        <a href="ganadores.html" class="nav__link active">🏆 Ganadores</a>
+        <a href="admin.html" class="nav__link hide-mobile">⚙️ Admin</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Banner -->
+  <header class="winners-hero section">
+    <div class="container text-center">
+      <span class="badge badge--gold mb-3">HALL DE LA FAMA</span>
+      <h1 class="display-2 mb-2">Historial de <span class="text-gold">Ganadores</span></h1>
+      <p class="section-subtitle">
+        Transparencia y emoción en cada sorteo. Estos son los afortunados clientes que ganaron con su compra.
+      </p>
+    </div>
+  </header>
+
+  <!-- Winners Grid Section -->
+  <main class="section winners-section">
+    <div class="container">
+      
+      <!-- Loading Skeleton State -->
+      <div id="winners-loading" class="winners-grid">
+        <div class="card card--glass skeleton-card skeleton"></div>
+        <div class="card card--glass skeleton-card skeleton"></div>
+        <div class="card card--glass skeleton-card skeleton"></div>
+      </div>
+
+      <!-- Empty State -->
+      <div id="winners-empty" class="card card--glass text-center p-8 hide">
+        <div class="empty-icon">🎰</div>
+        <h3 class="text-gold mb-2">Aún no hay ganadores registrados</h3>
+        <p class="text-secondary max-w-md margin-auto mb-6">
+          Los ganadores de cada mes aparecerán publicados aquí automáticamente al finalizar el sorteo en la ruleta.
+        </p>
+        <a href="index.html" class="btn btn--secondary">Volver al Inicio</a>
+      </div>
+
+      <!-- Real Winners Grid -->
+      <div id="winners-grid" class="winners-grid hide">
+        <!-- Dynamic Cards inserted by JS -->
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer mt-16">
+    <div class="container">
+      <div class="footer__inner">
+        <div class="footer__brand">
+          <span class="footer__logo">🍾 RULETA AQUI LICOR</span>
+          <p class="footer__tagline">Sorteos mensuales para nuestros clientes</p>
+        </div>
+        <div class="footer__links">
+          <a href="index.html" class="footer__link">Inicio</a>
+          <a href="admin.html" class="footer__link">Admin</a>
+        </div>
+      </div>
+      <div class="footer__bottom">
+        <p>© <span id="footer-year"></span> RULETA AQUI LICOR. Venta y consumo responsable de bebidas alcohólicas (+18).</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="js/config.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/ganadores.js"></script>
+</body>
+</html>

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Registro de Ticket — RULETA AQUI LICOR</title>
+  <meta name="description" content="Registra tu compra con el código QR para participar en el sorteo mensual de RULETA AQUI LICOR." />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Supabase JS SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/main.css" />
+  <link rel="stylesheet" href="css/registro.css" />
+</head>
+<body>
+
+  <div class="reg-page">
+    <!-- Background Glows -->
+    <div class="reg-bg-glow reg-bg-glow--top"></div>
+    <div class="reg-bg-glow reg-bg-glow--bottom"></div>
+
+    <main class="reg-container container--narrow">
+      
+      <!-- Brand Header -->
+      <div class="reg-header">
+        <a href="index.html" class="reg-logo">🍾 RULETA AQUI LICOR</a>
+        <p class="reg-tagline">Registro de Ticket para Sorteo Mensual</p>
+      </div>
+
+      <!-- Loading State -->
+      <div id="state-loading" class="card card--glass state-card text-center">
+        <div class="spinner margin-auto"></div>
+        <p class="mt-4 text-secondary">Verificando validez del código QR...</p>
+      </div>
+
+      <!-- Blocked / Used Token State -->
+      <div id="state-blocked" class="card card--glass state-card text-center hide">
+        <div class="state-icon state-icon--danger">🚫</div>
+        <h2 class="text-danger mb-3">Código QR No Válido o Ya Utilizado</h2>
+        <div class="alert alert--danger mb-4 text-left">
+          Este código QR ya fue utilizado para un registro previo o el enlace es incorrecto.
+        </div>
+        <p class="text-secondary mb-6">
+          Si realizaste otra compra en el local, solicita un <strong>nuevo código QR en la caja</strong> para registrar una nueva oportunidad.
+        </p>
+        <a href="index.html" class="btn btn--secondary w-full">Volver al Inicio</a>
+      </div>
+
+      <!-- Active Token / Registration Form State -->
+      <div id="state-form" class="card card--glass state-card hide">
+        <div class="form-badge">
+          <span class="dot dot--success"></span>
+          QR VÁLIDO (1 SOLO USO)
+        </div>
+
+        <h2 class="form-title">¡Registra tu Compra!</h2>
+        <p class="form-subtitle">Ingresa tus datos para acumular un ticket en el sorteo de este mes.</p>
+
+        <form id="registro-form" class="reg-form" novalidate>
+          
+          <!-- Nombre Completo -->
+          <div class="form-group" id="group-nombre">
+            <label for="nombre" class="form-label">Nombre Completo *</label>
+            <input 
+              type="text" 
+              id="nombre" 
+              name="nombre" 
+              class="form-input" 
+              placeholder="Ej. Juan Pérez" 
+              required 
+              autocomplete="name"
+            />
+            <span class="form-error">Por favor, ingresa tu nombre completo.</span>
+          </div>
+
+          <!-- Carnet de Identidad (CI) -->
+          <div class="form-group" id="group-ci">
+            <label for="ci" class="form-label">Carnet de Identidad / CI *</label>
+            <input 
+              type="text" 
+              id="ci" 
+              name="ci" 
+              class="form-input" 
+              placeholder="Ej. 1234567" 
+              required 
+            />
+            <span class="form-error">Ingresa un número de CI válido. Puedes usar el mismo CI en múltiples compras.</span>
+          </div>
+
+          <!-- Teléfono / Celular -->
+          <div class="form-group" id="group-telefono">
+            <label for="telefono" class="form-label">Número de Teléfono (Opcional)</label>
+            <input 
+              type="tel" 
+              id="telefono" 
+              name="telefono" 
+              class="form-input" 
+              placeholder="Ej. 76543210" 
+              autocomplete="tel"
+            />
+          </div>
+
+          <!-- Checkbox +18 -->
+          <div class="form-group" id="group-age">
+            <label class="checkbox-wrapper">
+              <input type="checkbox" id="age-check" name="age-check" required />
+              <span class="checkbox-label">
+                Confirmo que soy mayor de edad (+18 años) y acepto las condiciones del sorteo. *
+              </span>
+            </label>
+            <span class="form-error">Debes confirmar que eres mayor de 18 años para participar.</span>
+          </div>
+
+          <!-- Submit Button -->
+          <button type="submit" id="btn-submit" class="btn btn--primary btn--large w-full mt-4">
+            <span class="btn-text">🎰 Confirmar y Participar</span>
+            <span class="btn-spinner spinner spinner--sm hide"></span>
+          </button>
+        </form>
+      </div>
+
+      <!-- Success State -->
+      <div id="state-success" class="card card--glass state-card text-center hide">
+        <div class="state-icon state-icon--success">🎉</div>
+        <h2 class="text-gold mb-2">¡Registro Exitoso!</h2>
+        <p class="success-message mb-6">
+          ¡Felicidades! Tienes <strong>1 oportunidad más acumulada</strong> para el sorteo de este mes.
+        </p>
+        <div class="alert alert--success text-left mb-6">
+          <strong>Recordatorio:</strong> Si realizas otra compra en el local, pide un nuevo código QR en caja para volver a registrarte y multiplicar tus posibilidades.
+        </div>
+        <a href="index.html" class="btn btn--primary w-full">Finalizar y Volver</a>
+      </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="reg-footer text-center text-muted">
+      <p>RULETA AQUI LICOR — Venta y consumo responsable (+18)</p>
+    </footer>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/config.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/registro.js"></script>
+</body>
+</html>
