@@ -82,26 +82,32 @@ async function initAdminDashboard() {
 
 /* ── 3. QR Code Generator & Realtime Refresh ──────────────── */
 async function generarNuevoQR() {
+  const btnGenerate = document.getElementById('btn-generate-qr');
   const qrLoading = document.getElementById('qr-loading');
   const qrcodeContainer = document.getElementById('qrcode');
   const qrUrlDisplay = document.getElementById('qr-url-display');
   const badgeText = document.getElementById('qr-status-text');
   const badgeContainer = document.getElementById('qr-status-badge');
 
-  // Unsubscribe previous token listener if exists
+  // Desactivar botón para evitar ejecuciones simultáneas
+  if (btnGenerate) btnGenerate.disabled = true;
+
+  // Cancelar suscripción previa del token antiguo
   if (currentTokenUnsub) {
     currentTokenUnsub();
     currentTokenUnsub = null;
   }
 
+  // Limpiar vista completamente
   qrcodeContainer.innerHTML = '';
+  qrUrlDisplay.textContent = 'Generando nuevo código QR...';
   qrLoading.classList.remove('hide');
 
   try {
-    // Generate new token in Firestore
+    // 1. Crear entrada limpia con estado 'ACTIVO' en Supabase
     currentTokenId = await crearToken();
 
-    // Construct registration URL
+    // 2. Construir la URL del QR
     const baseUrl = (APP_CONFIG.domain && !APP_CONFIG.domain.includes('YOUR-DOMAIN'))
       ? APP_CONFIG.domain
       : window.location.origin + window.location.pathname.replace('admin.html', '');
@@ -110,7 +116,7 @@ async function generarNuevoQR() {
 
     qrLoading.classList.add('hide');
 
-    // Generate QR using qrcode.js
+    // 3. Renderizar el nuevo código QR en pantalla de caja
     qrCodeInstance = new QRCode(qrcodeContainer, {
       text: targetUrl,
       width: 200,
@@ -121,10 +127,12 @@ async function generarNuevoQR() {
     });
 
     qrUrlDisplay.textContent = targetUrl;
-    badgeText.textContent = 'QR ACTIVO';
+    badgeText.textContent = 'QR ACTIVO (1 SOLO USO)';
     badgeContainer.className = 'badge badge--active';
 
-    // Realtime subscription: auto-regenerate when client registers (token becomes USADO)
+    if (btnGenerate) btnGenerate.disabled = false;
+
+    // 4. Suscripción en tiempo real: auto-regenerar tan pronto como un cliente use este token
     currentTokenUnsub = onTokenChange(currentTokenId, (tokenData) => {
       if (!tokenData) return;
 
@@ -134,18 +142,20 @@ async function generarNuevoQR() {
         
         showToast('🎉 ¡Un cliente acaba de registrar su compra! Generando nuevo QR en 1.5s...', 'success');
 
-        // Automatically regenerate new QR for the next customer
+        // Regenerar automáticamente un nuevo QR para la caja
         setTimeout(() => {
           generarNuevoQR();
-          cargarParticipantes(); // Refresh ticket count
+          cargarParticipantes(); // Actualizar contador de tickets
         }, 1500);
       }
     });
 
   } catch (error) {
-    console.error('Error al generar QR:', error);
+    console.error('Error al generar nuevo QR:', error);
     qrLoading.classList.add('hide');
-    showToast('Error al crear nuevo QR en la base de datos.', 'danger');
+    qrUrlDisplay.textContent = 'Error al generar QR. Inténtalo de nuevo.';
+    if (btnGenerate) btnGenerate.disabled = false;
+    showToast('Error al crear nuevo QR en Supabase.', 'danger');
   }
 }
 

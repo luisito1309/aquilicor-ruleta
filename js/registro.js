@@ -1,5 +1,5 @@
 // ============================================================
-// js/registro.js — Customer Registration & Token Validation Logic
+// js/registro.js — Customer Registration & Strict Token Logic
 // ============================================================
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 let currentTokenId = null;
+let realtimeTokenUnsub = null;
 
 async function initRegistrationFlow() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -17,40 +18,47 @@ async function initRegistrationFlow() {
   const stateForm    = document.getElementById('state-form');
   const stateSuccess = document.getElementById('state-success');
 
-  // Helper to switch view state
   function showState(el) {
     [stateLoading, stateBlocked, stateForm, stateSuccess].forEach(s => s.classList.add('hide'));
     el.classList.remove('hide');
   }
 
-  // 1. If no token in URL -> Block
+  // 1. Si no hay token en la URL -> Bloquear inmediatamente
   if (!currentTokenId) {
     showState(stateBlocked);
     return;
   }
 
-  // 2. Validate token in Firebase Firestore
+  // 2. CAPA 1: Validar token en Supabase al cargar la vista
   try {
     const tokenData = await obtenerToken(currentTokenId);
 
     if (!tokenData || tokenData.estado !== 'ACTIVO') {
-      // Token doesn't exist or is USADO / EXPIRED -> Block
+      // Token no existe o su estado ya es 'USADO' / 'EXPIRED' -> Bloquear
       showState(stateBlocked);
       return;
     }
 
-    // Token is ACTIVE -> Show Form
+    // Token VÁLIDO y ACTIVO -> Mostrar Formulario
     showState(stateForm);
-    setupFormValidation();
+    setupFormValidation(showState, stateBlocked, stateSuccess);
+
+    // Escuchador en tiempo real: Si alguien más usa este mismo QR mientras la página está abierta
+    realtimeTokenUnsub = onTokenChange(currentTokenId, (updatedToken) => {
+      if (updatedToken && updatedToken.estado !== 'ACTIVO') {
+        showState(stateBlocked);
+        showToast('Este código QR acaba de ser utilizado por otro dispositivo.', 'warning');
+      }
+    });
 
   } catch (error) {
-    console.error('Error al validar token:', error);
+    console.error('Error al validar token en Capa 1:', error);
     showToast('Error de conexión al verificar el código QR.', 'danger');
     showState(stateBlocked);
   }
 }
 
-function setupFormValidation() {
+function setupFormValidation(showState, stateBlocked, stateSuccess) {
   const form = document.getElementById('registro-form');
   const nombreInput = document.getElementById('nombre');
   const ciInput = document.getElementById('ci');
@@ -62,24 +70,21 @@ function setupFormValidation() {
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    // Reset error states
+    // Limpiar errores visuales previos
     document.querySelectorAll('.form-group').forEach(g => g.classList.remove('has-error'));
 
     let isValid = true;
 
-    // Validate Nombre
     if (!nombreInput.value.trim()) {
       document.getElementById('group-nombre').classList.add('has-error');
       isValid = false;
     }
 
-    // Validate CI
     if (!ciInput.value.trim()) {
       document.getElementById('group-ci').classList.add('has-error');
       isValid = false;
     }
 
-    // Validate Checkbox +18
     if (!ageCheck.checked) {
       document.getElementById('group-age').classList.add('has-error');
       isValid = false;
@@ -87,34 +92,41 @@ function setupFormValidation() {
 
     if (!isValid) return;
 
-    // Start submit process
+    // Desactivar botón para prevenir doble clic
     btnSubmit.disabled = true;
     btnText.classList.add('hide');
     btnSpinner.classList.remove('hide');
 
     try {
-      // a) Save participation in DB
-      await registrarParticipacion({
+      // CAPA 2: Ejecución atómica (Consumir token condicionado a estado='ACTIVO' + Insertar participación)
+      await registrarParticipacionConTokenEstricto({
         nombre: nombreInput.value.trim(),
         ci: ciInput.value.trim(),
         telefono: document.getElementById('telefono').value.trim(),
         tokenId: currentTokenId
       });
 
-      // b) Mark token as USADO
-      await marcarTokenUsado(currentTokenId);
+      // Cancelar suscripción en tiempo real
+      if (realtimeTokenUnsub) realtimeTokenUnsub();
 
-      // c) Show success screen & launch confetti
-      document.getElementById('state-form').classList.add('hide');
-      document.getElementById('state-success').classList.remove('hide');
+      // Registro exitoso -> Mostrar pantalla de éxito
+      showState(stateSuccess);
       launchConfetti();
 
     } catch (error) {
-      console.error('Error al registrar participacion:', error);
-      showToast('Ocurrió un error al guardar tu registro. Inténtalo de nuevo.', 'danger');
-      btnSubmit.disabled = false;
-      btnText.classList.remove('hide');
-      btnSpinner.classList.add('hide');
+      console.error('Error al procesar registro:', error);
+
+      if (error.message === 'TOKEN_ALREADY_USED_OR_INVALID') {
+        // Bloqueo estricto: El token ya fue consumido
+        if (realtimeTokenUnsub) realtimeTokenUnsub();
+        showState(stateBlocked);
+        showToast('Este código QR ya fue utilizado previamente. Solicita un nuevo QR en caja.', 'danger');
+      } else {
+        showToast('Ocurrió un error al guardar tu registro. Inténtalo nuevamente.', 'danger');
+        btnSubmit.disabled = false;
+        btnText.classList.remove('hide');
+        btnSpinner.classList.add('hide');
+      }
     }
   });
 }

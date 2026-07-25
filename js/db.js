@@ -1,7 +1,7 @@
 // ============================================================
 // js/db.js — Supabase Database Client & Helper Functions
 // ============================================================
-// Depende de: config.js y @supabase/supabase-js (CDN)
+// Contiene la validación atómica estricta de QR de 1 solo uso.
 // ============================================================
 
 let _supabaseClient = null;
@@ -60,7 +60,7 @@ async function crearToken() {
 
 /**
  * Lee el estado de un token por su ID.
- * Retorna el objeto o null si no existe.
+ * Retorna el objeto token o null si no existe.
  */
 async function obtenerToken(tokenId) {
   const client = getDB();
@@ -78,28 +78,9 @@ async function obtenerToken(tokenId) {
 }
 
 /**
- * Marca un token como USADO.
- */
-async function marcarTokenUsado(tokenId) {
-  const client = getDB();
-  const { data, error } = await client
-    .from(APP_CONFIG.tables.tokens)
-    .update({
-      estado: 'USADO',
-      fecha_uso: new Date().toISOString()
-    })
-    .eq('id', tokenId);
-
-  if (error) {
-    console.error('Error al marcar token usado:', error);
-    throw error;
-  }
-}
-
-/**
- * Suscripción en tiempo real al estado de un token usando Supabase Realtime Channels.
- * Llama a callback(data) cada vez que el token cambie.
- * Retorna función para cancelar la suscripción.
+ * Suscripción en tiempo real al estado de un token específico.
+ * Llama a callback(data) cada vez que el token cambie en Supabase.
+ * Retorna función para desuscribirse.
  */
 function onTokenChange(tokenId, callback) {
   const client = getDB();
@@ -127,32 +108,68 @@ function onTokenChange(tokenId, callback) {
   };
 }
 
-/* ── Participaciones Helpers ────────────────────────────────── */
+/* ── Participaciones & Validación Estricta de 1 Solo Uso ───── */
 
 /**
- * Registra una nueva participación en Supabase.
+ * REGISTRO ESTRICTO DE 1 SOLO USO (Capa 2 - Transacción Atómica):
+ * 1. Intenta cambiar el estado del token de 'ACTIVO' -> 'USADO' condicionado a estado='ACTIVO'.
+ * 2. Si no actualiza ninguna fila (alguien más lo usó o no existe), lanza error 'TOKEN_ALREADY_USED_OR_INVALID'.
+ * 3. Si la actualización tuvo éxito (afectó 1 fila), guarda la participación en 'participaciones'.
  */
-async function registrarParticipacion(data) {
+async function registrarParticipacionConTokenEstricto(data) {
   const client = getDB();
-  const { data: result, error } = await client
+  const nowIso = new Date().toISOString();
+
+  // Paso 1: Consumir token atómicamente si y solo si estado === 'ACTIVO'
+  const { data: updatedTokens, error: updateError } = await client
+    .from(APP_CONFIG.tables.tokens)
+    .update({
+      estado: 'USADO',
+      fecha_uso: nowIso
+    })
+    .eq('id', data.tokenId)
+    .eq('estado', 'ACTIVO')
+    .select();
+
+  if (updateError) {
+    console.error('Error al actualizar estado del token:', updateError);
+    throw new Error('TOKEN_UPDATE_FAILED');
+  }
+
+  // Si no se actualizó ninguna fila, el token ya fue consumido o es inválido
+  if (!updatedTokens || updatedTokens.length === 0) {
+    throw new Error('TOKEN_ALREADY_USED_OR_INVALID');
+  }
+
+  // Paso 2: Token consumido con éxito por esta solicitud -> Insertar participación
+  const { data: result, error: insertError } = await client
     .from(APP_CONFIG.tables.participaciones)
     .insert([{
       nombre:         data.nombre.trim(),
       ci:             data.ci.trim(),
       telefono:       data.telefono ? data.telefono.trim() : '',
       token_id:       data.tokenId,
-      fecha_registro: new Date().toISOString()
-    }]);
+      fecha_registro: nowIso
+    }])
+    .select();
 
-  if (error) {
-    console.error('Error al registrar participacion:', error);
-    throw error;
+  if (insertError) {
+    console.error('Error al guardar la participación:', insertError);
+
+    // Revertir el token a 'ACTIVO' si fallara el guardado de la participación
+    await client
+      .from(APP_CONFIG.tables.tokens)
+      .update({ estado: 'ACTIVO', fecha_uso: null })
+      .eq('id', data.tokenId);
+
+    throw new Error('PARTICIPATION_INSERT_FAILED');
   }
+
   return result;
 }
 
 /**
- * Obtiene participaciones dentro del rango de fechas activo.
+ * Obtiene participaciones dentro del rango de fechas activo para la ruleta.
  */
 async function obtenerParticipaciones(startDate, endDate) {
   const client = getDB();
@@ -175,9 +192,6 @@ async function obtenerParticipaciones(startDate, endDate) {
 
 /* ── Sorteo Config Helpers ──────────────────────────────────── */
 
-/**
- * Guarda la configuración del sorteo en Supabase.
- */
 async function guardarConfigSorteo(config) {
   const client = getDB();
   const fechaInicioIso = new Date(config.fechaInicio).toISOString();
@@ -199,9 +213,6 @@ async function guardarConfigSorteo(config) {
   }
 }
 
-/**
- * Lee la configuración del sorteo.
- */
 async function obtenerConfigSorteo() {
   const client = getDB();
   const { data, error } = await client
@@ -221,9 +232,6 @@ async function obtenerConfigSorteo() {
 
 /* ── Ganadores Helpers ──────────────────────────────────────── */
 
-/**
- * Guarda un ganador en la tabla ganadores.
- */
 async function guardarGanador(ganador) {
   const client = getDB();
   const now = new Date();
@@ -248,9 +256,6 @@ async function guardarGanador(ganador) {
   }
 }
 
-/**
- * Obtiene la lista de ganadores ordenados desc.
- */
 async function obtenerGanadores() {
   const client = getDB();
   const { data, error } = await client
@@ -265,7 +270,7 @@ async function obtenerGanadores() {
   return data || [];
 }
 
-/* ── UI Utilities (Toast, Confetti, Reveal) ─────────────────── */
+/* ── UI Utilities ───────────────────────────────────────────── */
 
 function showToast(message, type = 'info', duration = 4000) {
   let container = document.getElementById('toast-container');
