@@ -62,35 +62,69 @@
 
     <main class="container admin-main">
 
-      <!-- Section 1: QR Generator Panel (Caja) -->
+      <!-- Section 1: QRs Panel (Dinámico de Caja + Fijo Promocional) -->
       <section class="admin-section">
-        <div class="card card--glass qr-panel">
-          <div class="qr-panel__header">
-            <div>
-              <h2 class="qr-panel__title">📱 Generador de QR (Pantalla de Caja)</h2>
-              <p class="text-secondary">El QR se regenera automáticamente cuando el cliente completa su registro.</p>
+        <div class="grid grid-2-col gap-6">
+
+          <!-- Card 1: QR Dinámico de Caja (1 Solo Uso) -->
+          <div class="card card--glass qr-panel">
+            <div class="qr-panel__header">
+              <div>
+                <h2 class="qr-panel__title">⚡ QR Dinámico (Caja)</h2>
+                <p class="text-secondary text-sm">Un solo uso. Se regenera automáticamente tras cada registro.</p>
+              </div>
+              <div id="qr-status-badge" class="badge badge--active">
+                <span class="dot dot--success"></span> <span id="qr-status-text">QR ACTIVO</span>
+              </div>
             </div>
-            <div id="qr-status-badge" class="badge badge--active">
-              <span class="dot dot--success"></span> <span id="qr-status-text">QR ACTIVO</span>
+
+            <div class="qr-display-container">
+              <div class="qr-card">
+                <div id="qrcode" class="qr-canvas"></div>
+                <div id="qr-loading" class="spinner margin-auto hide"></div>
+                <p id="qr-url-display" class="qr-url-text">https://...</p>
+              </div>
+
+              <div class="qr-actions w-full">
+                <button id="btn-generate-qr" class="btn btn--primary w-full">
+                  ⚡ Generar Nuevo QR
+                </button>
+                <p class="text-muted text-xs text-center mt-2">
+                  🔒 Caduca inmediatamente al ser escaneado y enviado por un cliente.
+                </p>
+              </div>
             </div>
           </div>
 
-          <div class="qr-display-container">
-            <div class="qr-card">
-              <div id="qrcode" class="qr-canvas"></div>
-              <div id="qr-loading" class="spinner margin-auto hide"></div>
-              <p id="qr-url-display" class="qr-url-text">https://...</p>
+          <!-- Card 2: QR Fijo Promocional del Mes (Multiuso / Impresión) -->
+          <div class="card card--glass qr-panel">
+            <div class="qr-panel__header">
+              <div>
+                <h2 class="qr-panel__title">📢 QR Fijo Promocional</h2>
+                <p class="text-secondary text-sm">Multiuso. Para banners, volantes y publicidad del local.</p>
+              </div>
+              <div class="badge badge--gold">
+                <span>📍 MULTIUSO</span>
+              </div>
             </div>
 
-            <div class="qr-actions">
-              <button id="btn-generate-qr" class="btn btn--primary btn--large">
-                ⚡ Generar Nuevo QR Manualmente
-              </button>
-              <p class="text-muted text-sm text-center mt-2">
-                🔒 Cada QR es único y caduca inmediatamente al ser utilizado por un cliente.
-              </p>
+            <div class="qr-display-container">
+              <div class="qr-card promo-qr-card">
+                <div id="qrcode-promo" class="qr-canvas"></div>
+                <p id="qr-promo-url-display" class="qr-url-text">https://...</p>
+              </div>
+
+              <div class="qr-actions w-full">
+                <button id="btn-download-promo-qr" class="btn btn--secondary w-full">
+                  📥 Descargar QR Fijo (PNG)
+                </button>
+                <p class="text-muted text-xs text-center mt-2">
+                  🖨️ Apunta a la página principal informando sobre el sorteo activo.
+                </p>
+              </div>
             </div>
           </div>
+
         </div>
       </section>
 

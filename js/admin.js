@@ -53,11 +53,11 @@ function initAdminAuth() {
 }
 
 /* ── 2. Dashboard Init ────────────────────────────────────── */
-async function initAdminDashboard() {
-  // Init QR button listener
+  // Init QR buttons listeners
   document.getElementById('btn-generate-qr').addEventListener('click', () => {
     generarNuevoQR();
   });
+  document.getElementById('btn-download-promo-qr').addEventListener('click', descargarQRFijoPNG);
 
   // Init Config Form listener
   document.getElementById('sorteo-config-form').addEventListener('submit', handleSaveConfig);
@@ -77,6 +77,7 @@ async function initAdminDashboard() {
   // Load Initial Data
   await cargarConfiguracion();
   await generarNuevoQR();
+  generarQRFijoPromocional();
   initRouletteCanvas();
 }
 
@@ -157,6 +158,117 @@ async function generarNuevoQR() {
     if (btnGenerate) btnGenerate.disabled = false;
     showToast('Error al crear nuevo QR en Supabase.', 'danger');
   }
+}
+
+/* ── 3b. QR Fijo Promocional (Multiuso / Impresión) ────────── */
+let promoQrCodeInstance = null;
+let currentPromoTargetUrl = '';
+
+function generarQRFijoPromocional() {
+  const container = document.getElementById('qrcode-promo');
+  const displayUrl = document.getElementById('qr-promo-url-display');
+  if (!container || !displayUrl) return;
+
+  container.innerHTML = '';
+
+  const baseUrl = (APP_CONFIG.domain && !APP_CONFIG.domain.includes('YOUR-DOMAIN'))
+    ? APP_CONFIG.domain
+    : window.location.origin + window.location.pathname.replace('admin.html', '');
+
+  currentPromoTargetUrl = `${baseUrl.replace(/\/$/, '')}/index.html`;
+
+  promoQrCodeInstance = new QRCode(container, {
+    text: currentPromoTargetUrl,
+    width: 200,
+    height: 200,
+    colorDark: '#080810',
+    colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.H
+  });
+
+  displayUrl.textContent = currentPromoTargetUrl;
+}
+
+function descargarQRFijoPNG() {
+  const container = document.getElementById('qrcode-promo');
+  if (!container) return;
+
+  const rawCanvas = container.querySelector('canvas');
+  const rawImg = container.querySelector('img');
+
+  let qrImageSource = null;
+  if (rawCanvas) {
+    qrImageSource = rawCanvas;
+  } else if (rawImg && rawImg.src) {
+    qrImageSource = rawImg;
+  }
+
+  if (!qrImageSource) {
+    showToast('El código QR promocional no está listo aún.', 'warning');
+    return;
+  }
+
+  // Crear canvas offscreen de alta resolución (600x740 px) para impresión profesional
+  const offscreen = document.createElement('canvas');
+  offscreen.width = 600;
+  offscreen.height = 740;
+  const ctx = offscreen.getContext('2d');
+
+  // Fondo oscuro elegante
+  ctx.fillStyle = '#080810';
+  ctx.fillRect(0, 0, 600, 740);
+
+  // Borde dorado de lujo
+  ctx.strokeStyle = '#d4a843';
+  ctx.lineWidth = 10;
+  ctx.strokeRect(16, 16, 568, 708);
+
+  // Título de Marca
+  ctx.fillStyle = '#f0c040';
+  ctx.font = '900 30px "Playfair Display", Georgia, serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('🍾 RULETA AQUI LICOR 🍾', 300, 75);
+
+  // Subtítulo
+  ctx.fillStyle = '#a8a8c8';
+  ctx.font = '600 16px Inter, sans-serif';
+  ctx.fillText('ESCANEA PARA CONOCER EL SORTEO DEL MES', 300, 110);
+
+  // Tarjeta Blanca para el QR
+  ctx.fillStyle = '#ffffff';
+  if (ctx.roundRect) {
+    ctx.roundRect(110, 135, 380, 380, 20);
+    ctx.fill();
+  } else {
+    ctx.fillRect(110, 135, 380, 380);
+  }
+
+  // Dibujar el código QR centrado (340x340 px)
+  ctx.drawImage(qrImageSource, 130, 155, 340, 340);
+
+  // Leyenda Promocional
+  ctx.fillStyle = '#f0c040';
+  ctx.font = 'bold 20px Inter, sans-serif';
+  ctx.fillText('¡Cada compra es una oportunidad de ganar!', 300, 560);
+
+  ctx.fillStyle = '#eeeeef';
+  ctx.font = '14px Inter, sans-serif';
+  ctx.fillText('Pide tu QR de registro único en caja tras tu compra.', 300, 595);
+
+  ctx.fillStyle = '#6868a8';
+  ctx.font = '12px Inter, sans-serif';
+  ctx.fillText('Venta y consumo responsable de bebidas alcohólicas (+18)', 300, 675);
+
+  // Descarga del archivo PNG
+  const dataUrl = offscreen.toDataURL('image/png');
+  const link = document.createElement('a');
+  link.download = 'QR_Promocional_RULETA_AQUI_LICOR.png';
+  link.href = dataUrl;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  showToast('📥 ¡QR Promocional descargado en PNG de alta resolución!', 'success');
 }
 
 /* ── 4. Sorteo Config & Tickets ────────────────────────────── */
