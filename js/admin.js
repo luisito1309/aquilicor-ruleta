@@ -53,6 +53,7 @@ function initAdminAuth() {
 }
 
 /* ── 2. Dashboard Init ────────────────────────────────────── */
+async function initAdminDashboard() {
   // Init QR buttons listeners
   document.getElementById('btn-generate-qr').addEventListener('click', () => {
     generarNuevoQR();
