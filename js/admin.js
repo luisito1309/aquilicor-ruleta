@@ -176,7 +176,7 @@ function generarQRFijoPromocional() {
     ? APP_CONFIG.domain
     : window.location.origin + window.location.pathname.replace('admin.html', '');
 
-  currentPromoTargetUrl = `${baseUrl.replace(/\/$/, '')}/index.html`;
+  currentPromoTargetUrl = `${baseUrl.replace(/\/$/, '')}/registro.html?token=PROMO_SORTEO`;
 
   promoQrCodeInstance = new QRCode(container, {
     text: currentPromoTargetUrl,
@@ -233,7 +233,7 @@ function descargarQRFijoPNG() {
   // Subtítulo
   ctx.fillStyle = '#a8a8c8';
   ctx.font = '600 16px Inter, sans-serif';
-  ctx.fillText('ESCANEA PARA CONOCER EL SORTEO DEL MES', 300, 110);
+  ctx.fillText('ESCANEA PARA REGISTRARTE EN EL SORTEO', 300, 110);
 
   // Tarjeta Blanca para el QR
   ctx.fillStyle = '#ffffff';

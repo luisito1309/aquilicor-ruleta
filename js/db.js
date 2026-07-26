@@ -62,7 +62,16 @@ async function crearToken() {
  * Lee el estado de un token por su ID.
  * Retorna el objeto token o null si no existe.
  */
+/**
+ * Lee el estado de un token por su ID.
+ * Retorna el objeto token o null si no existe.
+ */
 async function obtenerToken(tokenId) {
+  // Si es el Token Fijo Promocional del Mes, siempre está ACTIVO y permanente
+  if (tokenId === 'PROMO_SORTEO' || (tokenId && tokenId.startsWith('PROMO_'))) {
+    return { id: tokenId, estado: 'ACTIVO', isPromo: true };
+  }
+
   const client = getDB();
   const { data, error } = await client
     .from(APP_CONFIG.tables.tokens)
@@ -83,6 +92,10 @@ async function obtenerToken(tokenId) {
  * Retorna función para desuscribirse.
  */
 function onTokenChange(tokenId, callback) {
+  if (tokenId === 'PROMO_SORTEO' || (tokenId && tokenId.startsWith('PROMO_'))) {
+    return () => {}; // Sin suscripción para el token fijo promocional
+  }
+
   const client = getDB();
   
   const channel = client
@@ -111,37 +124,39 @@ function onTokenChange(tokenId, callback) {
 /* ── Participaciones & Validación Estricta de 1 Solo Uso ───── */
 
 /**
- * REGISTRO ESTRICTO DE 1 SOLO USO (Capa 2 - Transacción Atómica):
- * 1. Intenta cambiar el estado del token de 'ACTIVO' -> 'USADO' condicionado a estado='ACTIVO'.
- * 2. Si no actualiza ninguna fila (alguien más lo usó o no existe), lanza error 'TOKEN_ALREADY_USED_OR_INVALID'.
- * 3. Si la actualización tuvo éxito (afectó 1 fila), guarda la participación en 'participaciones'.
+ * REGISTRO ESTRICTO (Capa 2 - Transacción Atómica):
+ * - Si es el QR Fijo Promocional (PROMO_SORTEO): No invalida el token (es permanente) y guarda la participación.
+ * - Si es un QR Dinámico de Caja: Cambia atómicamente 'ACTIVO' -> 'USADO' e inserta la participación.
  */
 async function registrarParticipacionConTokenEstricto(data) {
   const client = getDB();
   const nowIso = new Date().toISOString();
+  const isPromoToken = data.tokenId === 'PROMO_SORTEO' || (data.tokenId && data.tokenId.startsWith('PROMO_'));
 
-  // Paso 1: Consumir token atómicamente si y solo si estado === 'ACTIVO'
-  const { data: updatedTokens, error: updateError } = await client
-    .from(APP_CONFIG.tables.tokens)
-    .update({
-      estado: 'USADO',
-      fecha_uso: nowIso
-    })
-    .eq('id', data.tokenId)
-    .eq('estado', 'ACTIVO')
-    .select();
+  if (!isPromoToken) {
+    // Paso 1 (QR Dinámico de Caja): Consumir token atómicamente si y solo si estado === 'ACTIVO'
+    const { data: updatedTokens, error: updateError } = await client
+      .from(APP_CONFIG.tables.tokens)
+      .update({
+        estado: 'USADO',
+        fecha_uso: nowIso
+      })
+      .eq('id', data.tokenId)
+      .eq('estado', 'ACTIVO')
+      .select();
 
-  if (updateError) {
-    console.error('Error al actualizar estado del token:', updateError);
-    throw new Error('TOKEN_UPDATE_FAILED');
+    if (updateError) {
+      console.error('Error al actualizar estado del token:', updateError);
+      throw new Error('TOKEN_UPDATE_FAILED');
+    }
+
+    // Si no se actualizó ninguna fila, el token ya fue consumido o es inválido
+    if (!updatedTokens || updatedTokens.length === 0) {
+      throw new Error('TOKEN_ALREADY_USED_OR_INVALID');
+    }
   }
 
-  // Si no se actualizó ninguna fila, el token ya fue consumido o es inválido
-  if (!updatedTokens || updatedTokens.length === 0) {
-    throw new Error('TOKEN_ALREADY_USED_OR_INVALID');
-  }
-
-  // Paso 2: Token consumido con éxito por esta solicitud -> Insertar participación
+  // Paso 2: Insertar participación
   const { data: result, error: insertError } = await client
     .from(APP_CONFIG.tables.participaciones)
     .insert([{
@@ -156,11 +171,13 @@ async function registrarParticipacionConTokenEstricto(data) {
   if (insertError) {
     console.error('Error al guardar la participación:', insertError);
 
-    // Revertir el token a 'ACTIVO' si fallara el guardado de la participación
-    await client
-      .from(APP_CONFIG.tables.tokens)
-      .update({ estado: 'ACTIVO', fecha_uso: null })
-      .eq('id', data.tokenId);
+    // Revertir el token dinámico si fallara la inserción de la participación
+    if (!isPromoToken) {
+      await client
+        .from(APP_CONFIG.tables.tokens)
+        .update({ estado: 'ACTIVO', fecha_uso: null })
+        .eq('id', data.tokenId);
+    }
 
     throw new Error('PARTICIPATION_INSERT_FAILED');
   }
