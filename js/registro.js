@@ -1,5 +1,5 @@
 // ============================================================
-// js/registro.js — Customer Registration & Strict Token Logic
+// js/registro.js — Customer Registration & Dual-Token Logic
 // ============================================================
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -11,7 +11,7 @@ let realtimeTokenUnsub = null;
 
 async function initRegistrationFlow() {
   const urlParams = new URLSearchParams(window.location.search);
-  currentTokenId = urlParams.get('token');
+  const rawToken = urlParams.get('token');
 
   const stateLoading = document.getElementById('state-loading');
   const stateBlocked = document.getElementById('state-blocked');
@@ -23,36 +23,41 @@ async function initRegistrationFlow() {
     el.classList.remove('hide');
   }
 
-  // 1. Si no hay token en la URL -> Bloquear inmediatamente
-  if (!currentTokenId) {
-    showState(stateBlocked);
+  // 1. SI ES QR FIJO PROMOCIONAL (sin token o token PROMO) -> ACCESO LIBRE PARA TODOS SIN RESTRICCIONES
+  const isPromo = !rawToken || rawToken.toUpperCase().startsWith('PROMO');
+  currentTokenId = isPromo ? 'PROMO_LIBRE' : rawToken;
+
+  if (isPromo) {
+    // Formulario habilitado siempre para todos los clientes (Multiuso e Ilimitado)
+    showState(stateForm);
+    setupFormValidation(showState, stateBlocked, stateSuccess);
     return;
   }
 
-  // 2. CAPA 1: Validar token en Supabase al cargar la vista
+  // 2. SI ES QR DINÁMICO DE CAJA -> Validar estado de 1 solo uso en Supabase
   try {
     const tokenData = await obtenerToken(currentTokenId);
 
     if (!tokenData || tokenData.estado !== 'ACTIVO') {
-      // Token no existe o su estado ya es 'USADO' / 'EXPIRED' -> Bloquear
+      // Token de caja consumido o inválido -> Bloquear
       showState(stateBlocked);
       return;
     }
 
-    // Token VÁLIDO y ACTIVO -> Mostrar Formulario
+    // Token de caja ACTIVO -> Habilitar Formulario
     showState(stateForm);
     setupFormValidation(showState, stateBlocked, stateSuccess);
 
-    // Escuchador en tiempo real: Si alguien más usa este mismo QR mientras la página está abierta
+    // Escuchador en tiempo real si el token de caja es usado por otro dispositivo
     realtimeTokenUnsub = onTokenChange(currentTokenId, (updatedToken) => {
       if (updatedToken && updatedToken.estado !== 'ACTIVO') {
         showState(stateBlocked);
-        showToast('Este código QR acaba de ser utilizado por otro dispositivo.', 'warning');
+        showToast('Este código QR de caja acaba de ser utilizado por otro dispositivo.', 'warning');
       }
     });
 
   } catch (error) {
-    console.error('Error al validar token en Capa 1:', error);
+    console.error('Error al validar token de caja:', error);
     showToast('Error de conexión al verificar el código QR.', 'danger');
     showState(stateBlocked);
   }
@@ -70,7 +75,7 @@ function setupFormValidation(showState, stateBlocked, stateSuccess) {
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    // Limpiar errores visuales previos
+    // Limpiar errores previos
     document.querySelectorAll('.form-group').forEach(g => g.classList.remove('has-error'));
 
     let isValid = true;
@@ -92,13 +97,13 @@ function setupFormValidation(showState, stateBlocked, stateSuccess) {
 
     if (!isValid) return;
 
-    // Desactivar botón para prevenir doble clic
+    // Desactivar botón para prevenir envíos duplicados por clic rápido
     btnSubmit.disabled = true;
     btnText.classList.add('hide');
     btnSpinner.classList.remove('hide');
 
     try {
-      // CAPA 2: Ejecución atómica (Consumir token condicionado a estado='ACTIVO' + Insertar participación)
+      // Guardar participación (si es PROMO_LIBRE no restringe; si es token de caja lo invalida)
       await registrarParticipacionConTokenEstricto({
         nombre: nombreInput.value.trim(),
         ci: ciInput.value.trim(),
@@ -106,10 +111,9 @@ function setupFormValidation(showState, stateBlocked, stateSuccess) {
         tokenId: currentTokenId
       });
 
-      // Cancelar suscripción en tiempo real
       if (realtimeTokenUnsub) realtimeTokenUnsub();
 
-      // Registro exitoso -> Mostrar pantalla de éxito
+      // Registro Exitoso
       showState(stateSuccess);
       launchConfetti();
 
@@ -117,10 +121,9 @@ function setupFormValidation(showState, stateBlocked, stateSuccess) {
       console.error('Error al procesar registro:', error);
 
       if (error.message === 'TOKEN_ALREADY_USED_OR_INVALID') {
-        // Bloqueo estricto: El token ya fue consumido
         if (realtimeTokenUnsub) realtimeTokenUnsub();
         showState(stateBlocked);
-        showToast('Este código QR ya fue utilizado previamente. Solicita un nuevo QR en caja.', 'danger');
+        showToast('Este código QR de caja ya fue utilizado previamente. Solicita un nuevo QR en caja.', 'danger');
       } else {
         showToast('Ocurrió un error al guardar tu registro. Inténtalo nuevamente.', 'danger');
         btnSubmit.disabled = false;

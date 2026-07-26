@@ -176,7 +176,7 @@ function generarQRFijoPromocional() {
     ? APP_CONFIG.domain
     : window.location.origin + window.location.pathname.replace('admin.html', '');
 
-  currentPromoTargetUrl = `${baseUrl.replace(/\/$/, '')}/registro.html?token=PROMO_SORTEO`;
+  currentPromoTargetUrl = `${baseUrl.replace(/\/$/, '')}/registro.html?token=PROMO_LIBRE`;
 
   promoQrCodeInstance = new QRCode(container, {
     text: currentPromoTargetUrl,
