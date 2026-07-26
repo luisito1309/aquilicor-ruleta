@@ -12,8 +12,8 @@ const APP_CONFIG = {
   adminPassword: "admin123",
 
   // ─── URL de producción ────────────────────────────────────
-  // Los QR generados apuntarán a: domain + "/registro.html?token=..."
-  domain: "https://YOUR-DOMAIN.com",
+  // Los QR generados apuntarán a este dominio público
+  domain: "https://aquilicor-ruleta.netlify.app",
 
   // ─── Datos del Sorteo ─────────────────────────────────────
   storeName: "RULETA AQUI LICOR",
